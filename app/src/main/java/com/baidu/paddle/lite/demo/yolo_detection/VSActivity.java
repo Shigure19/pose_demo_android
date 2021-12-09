@@ -65,6 +65,12 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
     private int timeSecond = 15;
     private TextView timeShow;
 
+    Button btnPause;
+    Button btnStop;
+    Button btnRemake;
+
+    private FrameLayout previewContainer;
+
     @Override
     protected void onCreate(Bundle savedInstanceBundle) {
         super.onCreate(savedInstanceBundle);
@@ -137,9 +143,9 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
 
         //所有按钮
         Button btnStart = findViewById(R.id.start);
-        Button btnPause = findViewById(R.id.pause);
-        Button btnStop = findViewById(R.id.stop);
-        Button btnRemake = findViewById(R.id.remake);
+        btnPause = findViewById(R.id.pause);
+        btnStop = findViewById(R.id.stop);
+        btnRemake = findViewById(R.id.remake);
         Button btnAfterReplay = findViewById(R.id.after_replay);
         Button btnAfterHome = findViewById(R.id.after_home);
         View btnBack = findViewById(R.id.btn_back);
@@ -158,6 +164,8 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
         timeShow = findViewById(R.id.time_show);
         //TextView poseTitle = findViewById(R.id.title_single);
         //poseTitle.setText(title[pose]);
+
+        previewContainer=(FrameLayout)findViewById(R.id.preview_container);
 
         //演示视频播放 todo 修改成动态
         String uri = "android.resource://" + getPackageName() + "/";
@@ -203,19 +211,19 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
             beforePlayingControl.setVisibility(View.VISIBLE);
             playingControl.setVisibility(View.GONE);
             afterPlayingControl.setVisibility(View.GONE);
-            svPreview.setVisibility(View.GONE);
+            previewContainer.setVisibility(View.GONE);
         } else if (page == 2) {
             overlayText.setVisibility(View.VISIBLE);
             beforePlayingControl.setVisibility(View.GONE);
             playingControl.setVisibility(View.VISIBLE);
             afterPlayingControl.setVisibility(View.GONE);
-            svPreview.setVisibility(View.VISIBLE);
+            previewContainer.setVisibility(View.VISIBLE);
         } else if (page == 3) {
             overlayText.setVisibility(View.GONE);
             beforePlayingControl.setVisibility(View.GONE);
             playingControl.setVisibility(View.GONE);
             afterPlayingControl.setVisibility(View.VISIBLE);
-            svPreview.setVisibility(View.GONE);
+            previewContainer.setVisibility(View.GONE);
         }
 
     }
@@ -249,24 +257,14 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
     }
 
     private void start() {
-        actionCountA = 0;
-        actionCountB = 0;
-        countA.setText("0");
-        countB.setText("0");
-        caloriesA.setText("0cal");
-        caloriesB.setText("0cal");
         time = getCountDownTimer(timeSecond * 1000L);
-        overlayText.setText("准备好了吗？");
         timer.setText(timeSecond + "s");
-
-        new CountDownTimer(4000, 1000) {
+        final String[] hint={"训练开始!","1","2","3","准备好了吗?"};
+        disableBtn();
+        new CountDownTimer(5000, 1000) {
             @Override
             public void onTick(long l) {
-                if (l < 1000) {
-                    overlayText.setText("训练开始！");
-                } else {
-                    overlayText.setText(String.valueOf(String.valueOf(l / 1000).charAt(0)));
-                }
+                overlayText.setText(hint[(int) Math.floor(l/1000)]);
             }
 
             @Override
@@ -274,12 +272,28 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
                 overlayText.setText("");
                 predictor.reset();
                 time.start();
-                playing = true;
+                actionCountA = 0;
+                actionCountB = 0;
+                countA.setText("0");
+                countB.setText("0");
+                caloriesA.setText("0cal");
+                caloriesB.setText("0cal");
+                enableBtn();
             }
         }.start();
         pageControl(2);
     }
+    private void disableBtn(){
+        btnPause.setEnabled(false);
+        btnStop.setEnabled(false);
+        btnRemake.setEnabled(false);
+    }
 
+    private void enableBtn(){
+        btnPause.setEnabled(true);
+        btnStop.setEnabled(true);
+        btnRemake.setEnabled(true);
+    }
     private void stop() {
         svPreview.releaseCamera();
         TextView c = findViewById(R.id.total_count_text);
@@ -320,9 +334,13 @@ public class VSActivity extends Activity implements View.OnClickListener, Camera
     }
 
     private void remake() {
-        clean();
-        pageControl(1);
+        Intent i = new Intent(VSActivity.this,VSActivity.class);
+        i.putExtra("pose", action_id[pose]);
+        i.putExtra("i", pose);
+        finish();
+        startActivity(i);
     }
+
 
     private void clean() {
         try {
